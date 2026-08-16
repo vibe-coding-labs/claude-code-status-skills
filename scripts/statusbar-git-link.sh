@@ -41,7 +41,7 @@ fi
 # 读取约定的局域网 URL 文件（server-url.txt）
 # 格式：每行一个入口，# 开头为注释、空行忽略；
 #       可选 名称|URL 标签（URL 不得含 |），无名称则整行即 URL；
-#       完整文本 + OSC8 超链接展示，多个用 " | " 分隔
+#       名称显示为普通文本，URL 本体为 OSC8 超链接，多个用 " | " 分隔
 urlfile="$project_dir/server-url.txt"
 extra=""
 if [ -f "$urlfile" ]; then
@@ -58,8 +58,11 @@ if [ -f "$urlfile" ]; then
     fi
     url="$(printf '%s' "$url" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
     [ -n "$url" ] || continue
-    label="${name:+${name}: }${url}"                # 显示文本：带名称则 "名称: URL"
-    link=$(printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$label")
+    # 超链接只包裹 URL 本体；名称前缀作为普通文本(不在链接内)
+    link=$(printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$url")
+    if [ -n "$name" ]; then
+      link="${name}: ${link}"
+    fi
     extra="${extra}${extra:+ | }${link}"
   done < "$urlfile" || true
 fi

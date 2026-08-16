@@ -32,10 +32,21 @@ echo "==> 3/5 状态栏实际输出 (带 server-url.txt)"
 PROJ="$TMP/proj"; mkdir -p "$PROJ"
 printf 'web|http://192.168.1.83:8080\napi|http://192.168.1.83:8081\n' > "$PROJ/server-url.txt"
 out="$(CLAUDE_PROJECT_DIR="$PROJ" bash "$CLAUDE_DIR/statusbar-git-link.sh")"
+ESC=$'\033'; BEL=$'\a'
+# 两个 URL 入口都渲染在输出中(名称与 URL 之间隔着 OSC8 序列, 故分别检查)
 case "$out" in
-  *"web: http://192.168.1.83:8080"*"api: http://192.168.1.83:8081"*) pass "输出含 web/api 两个标签入口" ;;
+  *"http://192.168.1.83:8080"*"http://192.168.1.83:8081"*) pass "两个 URL 入口都在输出中" ;;
   *) fail "输出不符合预期: $out" ;;
 esac
+# 超链接只包裹 URL 本体: OSC8 序列 [ESC]8;;URL BEL URL ESC]8;; BEL]
+# 链接内显示文本 = URL 本身(无 "名称: " 前缀)
+[[ "$out" == *"${ESC}]8;;http://192.168.1.83:8080${BEL}http://192.168.1.83:8080${ESC}]8;;${BEL}"* ]] \
+  && pass "URL 本体为超链接(链接文本=URL, 无前缀)" \
+  || fail "超链接范围不符(应只包 URL): $out"
+# 名称前缀在链接外: "web: " 紧跟链接起始序列
+[[ "$out" == *"web: ${ESC}]8;;"* ]] \
+  && pass "名称前缀在链接外(普通文本)" \
+  || fail "名称前缀进入链接: $out"
 
 echo "==> 4/5 校验"
 bash "$ROOT/scripts/verify.sh" >/dev/null || fail "verify.sh 失败"
