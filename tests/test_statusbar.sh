@@ -119,7 +119,7 @@ out5="$(CLAUDE_PROJECT_DIR="$PROJ5" bash "$ROOT/scripts/statusbar-git-link.sh")"
 # ---------- 10/10 CLI 选项与 --dry-run 无副作用 ----------
 echo "==> 10/10 CLI 选项与 --dry-run 无副作用"
 export CLAUDE_DIR="$TMP/claude-cli"
-bash "$ROOT/scripts/install.sh" --version | grep -q 'claude-code-status 1.1.0' || fail "--version 输出异常"
+bash "$ROOT/scripts/install.sh" --version | grep -Eq '^claude-code-status [0-9]+\.[0-9]+\.[0-9]+' || fail "--version 输出异常: $(bash "$ROOT/scripts/install.sh" --version)"
 pass "--version 输出版本号"
 bash "$ROOT/scripts/install.sh" --help | grep -q '用法' || fail "--help 未输出用法"
 pass "--help 输出用法"
@@ -136,5 +136,17 @@ pass "dry-run 卸载无副作用"
 bash "$ROOT/scripts/install.sh" --bogus >/dev/null 2>&1 || fail "未知参数不应导致失败"
 pass "未知参数仅告警不失败"
 
+# ---------- 11/11 status.sh 安装状态与同步检查 ----------
+export CLAUDE_DIR="$TMP/claude-status"
+echo "==> 11/11 status.sh 安装状态与同步检查"
+if bash "$ROOT/scripts/status.sh" >/dev/null 2>&1; then fail "未安装时 status.sh 应非零退出"; else pass "未安装时 status.sh 报告缺失(非零)"; fi
+bash "$ROOT/scripts/install.sh" >/dev/null || fail "安装失败"
+bash "$ROOT/scripts/status.sh" >/dev/null || fail "安装后 status.sh 应为零退出"
+pass "安装后 status.sh 报告就绪"
+# 篡改已装脚本 → status 报告过期、verify 失败(提示重装)
+printf '\n# drift\n' >> "$CLAUDE_DIR/statusbar-git-link.sh"
+if bash "$ROOT/scripts/status.sh" >/dev/null 2>&1; then fail "脚本漂移时 status.sh 应非零"; else pass "脚本漂移时 status.sh 报告过期(非零)"; fi
+if bash "$ROOT/scripts/verify.sh" >/dev/null 2>&1; then fail "脚本漂移时 verify 应失败"; else pass "脚本漂移时 verify 失败(提示重装)"; fi
+
 echo ""
-echo "✔ 冒烟测试全部通过 (10/10)"
+echo "✔ 冒烟测试全部通过 (11/11)"

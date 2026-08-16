@@ -47,9 +47,13 @@ Run: `bash scripts/install.sh`
 
 ### 3. 校验安装
 Run: `bash scripts/verify.sh`
-- 检查脚本存在/语法、`settings.json` 配置、输出样例
+- 检查脚本存在/语法、`settings.json` 配置、已装脚本与仓库版本同步、输出样例
 
-### 4. 卸载
+### 4. 查看安装状态
+Run: `bash scripts/status.sh`
+- 只读总览：脚本存在/语法/与仓库同步、`settings.json` statusLine、skill 软链接指向；全部就绪返回 0
+
+### 5. 卸载
 Run: `bash scripts/uninstall.sh`
 - 从 `settings.json` 移除 `statusLine`、删除状态栏脚本、移除 skill 软链接（其他配置与 server-url.txt 不受影响）
 

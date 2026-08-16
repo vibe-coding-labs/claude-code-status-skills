@@ -1,4 +1,34 @@
-*.log
-*.bak
-.DS_Store
+# ---- 本 skill 仓库忽略项 ----
+
+# Claude Code 本地配置（若误放入仓库，不纳入版本管理）
 settings.json
+
+# ---- 日志与临时文件 ----
+*.log
+logs/
+*.tmp
+*.tmp.*
+*.orig
+*.rej
+*.patch
+*~
+
+# ---- 备份文件 ----
+*.bak
+*.old
+
+# ---- 操作系统/编辑器 ----
+.DS_Store
+Thumbs.db
+.directory
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- Python 缓存（若引入辅助脚本） ----
+__pycache__/
+*.pyc
+
+# ---- 内网地址声明文件（多机器部署时可在本地添加, 不进仓库） ----
+server-url.txt

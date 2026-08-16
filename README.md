@@ -44,7 +44,8 @@ claude-code-status-skills/
 │   ├── lib.sh                  # 公共库：配置/日志/JSON 后端/settings 操作/CLI 解析
 │   ├── install.sh              # 安装：薄封装 + 主流程（部署脚本 + 合并 settings.json + 注册 skill）
 │   ├── uninstall.sh            # 卸载：薄封装 + 主流程（移除配置/脚本/skill 链接）
-│   ├── verify.sh               # 校验：薄封装 + 主流程（脚本语法 + 配置 + 输出样例）
+│   ├── verify.sh               # 校验：薄封装 + 主流程（脚本语法 + 配置 + 同步 + 输出样例）
+│   ├── status.sh               # 状态：只读总览（脚本/配置/软链接/与仓库同步）
 │   └── statusbar-git-link.sh   # 状态栏脚本本体（OSC8 超链接渲染，自包含）
 └── tests/
     └── test_statusbar.sh       # 隔离冒烟测试（10 节，临时 CLAUDE_DIR，不碰真实配置）
@@ -55,7 +56,8 @@ claude-code-status-skills/
 | 场景 | 命令 |
 |------|------|
 | 安装 / 更新 | `bash scripts/install.sh` |
-| 校验 | `bash scripts/verify.sh` |
+| 校验（含与仓库同步检查） | `bash scripts/verify.sh` |
+| 查看安装状态（只读） | `bash scripts/status.sh` |
 | 卸载 | `bash scripts/uninstall.sh` |
 | 演练（不实际改动） | 上述命令追加 `--dry-run` |
 | 为项目配置 URL | 项目根目录建 `server-url.txt`（或 `/server-url` skill） |
@@ -90,6 +92,7 @@ STATUSBAR_URL_FILE=urls.txt STATUSBAR_ENTRY_SEP="  " bash ~/.claude/statusbar-gi
 - **模块化**：三个管理脚本逻辑全部收敛到 `scripts/lib.sh`，各自仅剩 ~10 行薄封装（source lib + CLI 解析 + 调主流程），消除重复代码。
 - **JSON 双后端**：`settings.json` 的读写优先用 `jq`，缺失时自动回退 `python3`，两者都不可用才报错；可经 `CCS_JSON_BACKEND` 强制指定。
 - **零风险安装**：所有写操作走 `ccs_run`，支持 `--dry-run` 演练；`settings.json` 合并保留其余键，卸载只移除 `statusLine`。
+- **状态可见**：`verify.sh` 与 `status.sh` 都会检查已装脚本与仓库版本是否同步（`cmp` 对比），漂移时提示重跑 install；`status.sh` 为只读总览，不改动任何文件。
 - **状态栏脚本自包含**：运行时被复制到 `~/.claude/`，不依赖仓库，但保持可配置（`STATUSBAR_*` 环境变量均有默认值）。
 - **边界健壮**：`server-url.txt` 支持纯 URL 与 `名称|URL` 两种行、`#` 注释、空行、两侧空白修剪、末行无换行；所有命令对 `set -euo pipefail` 友好（避免 `&&` 简写在 `set -e` 下的陷阱）。
 

@@ -20,7 +20,7 @@
 
 # 仓库根目录 = lib.sh 所在 scripts/ 的上一级
 CCS_REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CCS_VERSION="1.1.0"
+CCS_VERSION="1.2.0"
 
 CCS_STATUSBAR_SOURCE="$CCS_REPO_DIR/scripts/$STATUSBAR_SCRIPT_NAME"
 CCS_STATUSBAR_TARGET="$CLAUDE_DIR/$STATUSBAR_SCRIPT_NAME"
@@ -202,6 +202,13 @@ ccs_install_script() { # 用 mkdir+cp+chmod 部署脚本(比 install -D 更通�
   ccs_run chmod 0755 "$dst"
 }
 
+# 已装脚本与仓库源是否一致; 源不可比(缺失)视为 true, 已装缺失视为 false
+ccs_installed_script_in_sync() {
+  [ -f "$CCS_STATUSBAR_SOURCE" ] || return 0
+  [ -f "$CCS_STATUSBAR_TARGET" ] || return 1
+  cmp -s "$CCS_STATUSBAR_SOURCE" "$CCS_STATUSBAR_TARGET"
+}
+
 # ---------- 主流程(由各薄封装脚本调用) ----------
 ccs_install_main() {
   ccs_log_info "1/3 部署状态栏脚本 → $CCS_STATUSBAR_TARGET"
@@ -255,7 +262,7 @@ ccs_uninstall_main() {
 ccs_verify_main() {
   local fail=0
 
-  ccs_log_info "1/3 脚本存在与语法"
+  ccs_log_info "1/4 脚本存在与语法"
   if [ -f "$CCS_STATUSBAR_TARGET" ] && bash -n "$CCS_STATUSBAR_TARGET" 2>/dev/null; then
     ccs_log_info "  ✔ $CCS_STATUSBAR_TARGET 存在且语法正确"
   else
@@ -263,7 +270,7 @@ ccs_verify_main() {
     fail=1
   fi
 
-  ccs_log_info "2/3 settings.json 的 statusLine 配置"
+  ccs_log_info "2/4 settings.json 的 statusLine 配置"
   local want="bash $CCS_STATUSBAR_TARGET"
   local got; got="$(ccs_settings_get_statusline_cmd)"
   if [ -n "$got" ] && [ "$got" = "$want" ]; then
@@ -273,7 +280,15 @@ ccs_verify_main() {
     fail=1
   fi
 
-  ccs_log_info "3/3 输出样例(带 server-url.txt)"
+  ccs_log_info "3/4 已装脚本与仓库版本一致"
+  if ccs_installed_script_in_sync; then
+    ccs_log_info "  ✔ 已装脚本与仓库同步"
+  else
+    ccs_log_error "  ✘ 已装脚本与仓库不一致, 请重跑: bash scripts/install.sh"
+    fail=1
+  fi
+
+  ccs_log_info "4/4 输出样例(带 server-url.txt)"
   local tmp out
   tmp="$(mktemp -d)"
   printf 'web|http://192.168.1.83:8080\n' > "$tmp/server-url.txt"
@@ -291,6 +306,59 @@ ccs_verify_main() {
   return 1
 }
 
+ccs_status_main() { # 安装状态总览: 只读, 不改动任何文件
+  local ok=0 got want link_target
+  ccs_log_info "claude-code-status v$CCS_VERSION — 安装状态"
+  echo "  配置目录: $CLAUDE_DIR"
+
+  echo "  状态栏脚本:"
+  if [ -f "$CCS_STATUSBAR_TARGET" ]; then
+    echo "    ✔ 已安装 ($CCS_STATUSBAR_TARGET)"
+    if bash -n "$CCS_STATUSBAR_TARGET" 2>/dev/null; then
+      echo "      语法: ✔"
+    else
+      echo "      语法: ✘"; ok=1
+    fi
+    if ccs_installed_script_in_sync; then
+      echo "      与仓库同步: ✔"
+    else
+      echo "      与仓库同步: ⚠ 已过期 — 请重跑 bash scripts/install.sh"; ok=1
+    fi
+  else
+    echo "    ✘ 未安装 — 请运行 bash scripts/install.sh"; ok=1
+  fi
+
+  echo "  settings.json:"
+  if ccs_settings_has_statusline; then
+    got="$(ccs_settings_get_statusline_cmd)"
+    want="bash $CCS_STATUSBAR_TARGET"
+    if [ -n "$got" ] && [ "$got" = "$want" ]; then
+      echo "    ✔ statusLine 已配置且 command 匹配"
+    else
+      echo "    ⚠ statusLine 已配置但 command 不符 (实际: ${got:-空}, 期望: $want)"; ok=1
+    fi
+  else
+    echo "    ✘ statusLine 未配置 — 请运行 bash scripts/install.sh"; ok=1
+  fi
+
+  echo "  skill 软链接:"
+  if [ -L "$CCS_SKILL_LINK" ]; then
+    link_target="$(readlink "$CCS_SKILL_LINK")"
+    if [ "$link_target" = "$CCS_REPO_DIR" ]; then
+      echo "    ✔ $CCS_SKILL_LINK → $CCS_REPO_DIR"
+    else
+      echo "    ⚠ 指向 $link_target (非本仓库)"; ok=1
+    fi
+  else
+    echo "    ✘ 未注册 — 请运行 bash scripts/install.sh"; ok=1
+  fi
+
+  printf '\n'
+  if [ "$ok" = 0 ]; then ccs_log_info "全部就绪"; return 0; fi
+  ccs_log_warn "存在待处理项, 详见上方"
+  return 1
+}
+
 # ---------- CLI ----------
 CCS_USAGE_COMMON="通用选项: --help|-h 帮助; --version|-V 版本; --verbose|-v 详细输出; --dry-run 演练(不实际改动)"
 CCS_USAGE_INSTALL="用法: bash scripts/install.sh [选项]
@@ -303,7 +371,11 @@ CCS_USAGE_UNINSTALL="用法: bash scripts/uninstall.sh [选项]
 $CCS_USAGE_COMMON"
 CCS_USAGE_VERIFY="用法: bash scripts/verify.sh [选项]
 
-校验状态栏安装: 脚本存在/语法、settings.json 的 statusLine 配置、输出样例。
+校验状态栏安装: 脚本存在/语法、settings.json 的 statusLine、已装脚本与仓库同步、输出样例。全部通过返回 0。
+$CCS_USAGE_COMMON"
+CCS_USAGE_STATUS="用法: bash scripts/status.sh [选项]
+
+查看 Claude Code 状态栏安装状态(只读): 脚本存在/语法/与仓库同步、settings.json 的 statusLine、skill 软链接。全部就绪返回 0。
 $CCS_USAGE_COMMON"
 
 ccs_cli_parse() { # 解析通用 CLI 选项; 第一参为 usage 文本
