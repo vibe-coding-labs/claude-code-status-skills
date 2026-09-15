@@ -20,14 +20,30 @@ description: 安装、配置、校验、卸载 Claude Code 状态栏(statusline)
 
 ```text
 # 服务入口 (更新于 2026-08-17)
-backend|http://192.168.1.83:30816
 pc|http://192.168.1.83:8080
-http://192.168.1.83:9000
+admin|http://192.168.1.83:8080/admin
+doc|http://192.168.1.83:8081/swagger-ui.html
 ```
 
 - `名称|http://IP:PORT` — 带名称（推荐），状态栏显示 `名称: URL`
 - `http://IP:PORT` — 不带名称，状态栏直接显示 URL
 - 项目是 git 仓库时，建议将 `server-url.txt` 加入 `.gitignore` 避免内网地址泄露
+
+### 收录原则（重要）
+
+状态栏 URL 是为了**方便跳转**，不是罗列本机所有服务端口：
+
+| 类型 | 举例 | 是否收录 |
+|------|------|----------|
+| 前端页面 / 管理后台 | Vite/Webpack/Next 开发服务器、admin 后台、Nginx 统一入口 | ✅ 收录 |
+| 接口文档 / 可视化调试页 | Swagger UI、`/doc.html`、GraphQL Playground | ✅ 收录（收录文档路径本身，而非裸 API 根路径） |
+| 纯后端 API base URL | Spring Boot / Express / FastAPI 的 `/api` 根路径 | ❌ 默认不收录（平时不会直接访问，点开只是 JSON 或 404） |
+| 健康检查 / metrics / WebSocket / gRPC | `/actuator`、`/health`、纯协议端口 | ❌ 不收录（运维用，非日常跳转） |
+
+- 单个项目一般 1~3 个入口即可；候选过多时先与用户确认要保留哪些，不要不加筛选全部写入。
+- 例外：用户明确要求把某个 API 地址也放进状态栏（如联调调试），才额外加入，可用名称标注用途，如 `api-debug|http://...`。
+- 判断某端口该不该收录时，可用 `curl -s -o /dev/null -w '%{content_type}\n' http://IP:PORT/`：返回 `text/html` 多半是页面（收录），返回 `application/json`/连接失败多半是接口（不收录）。
+- 更详细的判断方法与场景对照见 `/server-url` skill。
 
 ## 操作
 

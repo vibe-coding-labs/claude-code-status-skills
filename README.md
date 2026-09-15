@@ -26,14 +26,14 @@ bash scripts/verify.sh
 # 4. 新开 Claude Code 会话 → 状态栏生效
 ```
 
-为项目声明服务 URL：在项目根目录创建 `server-url.txt`：
+为项目声明服务 URL：在项目根目录创建 `server-url.txt`。状态栏 URL 是为了方便跳转，只需收录**首页型**入口（前端页面、管理后台等），纯后端 API 的 base URL 通常不必收录：
 
 ```text
-backend|http://192.168.1.83:30816
 pc|http://192.168.1.83:8080
+admin|http://192.168.1.83:8080/admin
 ```
 
-之后状态栏即显示 `backend: http://192.168.1.83:30816`（可点击）。
+之后状态栏即显示 `pc: http://192.168.1.83:8080`（可点击）。
 
 ## 目录结构
 

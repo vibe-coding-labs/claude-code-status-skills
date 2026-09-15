@@ -226,7 +226,7 @@ ccs_install_main() {
   echo "   <主机名>: <项目名> | [<服务名>:] <URL>"
   echo "  为项目声明服务 URL: 项目根目录创建 server-url.txt"
   echo "  格式(每行一个入口, 名称|URL, # 注释/空行忽略):"
-  echo "    backend|http://IP:PORT"
+  echo "    pc|http://IP:PORT"
   echo "  校验: bash scripts/verify.sh | 卸载: bash scripts/uninstall.sh"
 }
 
