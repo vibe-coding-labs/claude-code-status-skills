@@ -1,0 +1,12 @@
+{
+  "name": "claude-code-status",
+  "version": "1.2.0",
+  "description": "Install, configure, verify, and uninstall a Claude Code status line that shows the current model ID, hostname, a clickable git repo link, and LAN service URLs declared in server-url.txt.",
+  "author": {
+    "name": "vibe-coding-labs"
+  },
+  "homepage": "https://github.com/vibe-coding-labs/claude-code-status-skills",
+  "repository": "https://github.com/vibe-coding-labs/claude-code-status-skills",
+  "license": "MIT",
+  "keywords": ["statusline", "status-bar", "git", "server-url", "model"]
+}

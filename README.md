@@ -1,106 +1,156 @@
-# Claude Code 状态栏 Skill
+# Claude Code Status Line
 
-一个可安装、可配置的 [Claude Code](https://claude.com/claude-code) 状态栏（statusline）封装。状态栏展示 **主机名 / 项目 git 链接 / 当前模型 ID / 局域网服务 URL**，通过一个 skill 完成安装、配置、校验与卸载。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 效果
+An installable, configurable [Claude Code](https://claude.com/claude-code) status line, packaged as a skill. It shows the **current model ID**, the **hostname**, a **clickable git repository link**, and **clickable LAN service URLs**, and one skill handles install, configuration, verification, and uninstall.
+
+## What it looks like
 
 ```
 claude-opus-5 | local-server-002: PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
 ```
 
-- `PaiMian` → 可点击的 git 仓库链接（自动解析 `git remote`）
-- `claude-opus-5` → 当前会话正在使用的模型 ID（取自 Claude Code 传入的会话 JSON `model.id`，取不到时省略）
-- `backend: http://…` → 可点击的局域网服务 URL（由 `server-url.txt` 声明，仅 URL 本体为超链接，名称前缀为普通文本）
+- `claude-opus-5` — the model ID the current session is using, read from `model.id` in the session JSON Claude Code passes to the status line command. The segment is omitted when it cannot be determined.
+- `PaiMian` — a clickable link to the git repository (parsed from `git remote`, SSH and HTTPS both supported).
+- `backend: http://…` — a clickable LAN service URL declared in `server-url.txt`. Only the URL itself is the hyperlink; the name prefix is plain text.
 
-## 快速开始
+## Install
 
-```bash
-# 1. 克隆仓库
-git clone <this-repo> && cd claude-code-status-skills
+### Option 1: Claude Code marketplace (recommended)
 
-# 2. 安装（部署脚本 + 配置 settings.json + 注册 skill）
-bash scripts/install.sh
+Inside a Claude Code session:
 
-# 3. 校验
-bash scripts/verify.sh
-
-# 4. 新开 Claude Code 会话 → 状态栏生效
+```text
+/plugin marketplace add vibe-coding-labs/claude-code-status-skills
+/plugin install claude-code-status@claude-code-status-skills
 ```
 
-为项目声明服务 URL：在项目根目录创建 `server-url.txt`。状态栏 URL 是为了方便跳转，只需收录**首页型**入口（前端页面、管理后台等），纯后端 API 的 base URL 通常不必收录：
+Or from a terminal:
+
+```bash
+claude plugin marketplace add vibe-coding-labs/claude-code-status-skills
+claude plugin install claude-code-status@claude-code-status-skills
+```
+
+This registers the skill. The status line itself is activated by the install script (next section), which the skill runs for you — open a new session afterwards and ask Claude to install the status line, or run the script directly.
+
+### Option 2: install script
+
+```bash
+git clone https://github.com/vibe-coding-labs/claude-code-status-skills.git
+cd claude-code-status-skills
+bash scripts/install.sh    # deploy the script, merge settings.json, register the skill
+bash scripts/verify.sh     # check the result
+```
+
+Open a new Claude Code session and the status line takes effect.
+
+### Declare service URLs for a project
+
+Create `server-url.txt` in the project root (or let the `/server-url` skill generate it). Status line URLs exist to make jumping convenient, so list only **homepage-style** entries — frontend pages, admin consoles, doc sites. A bare backend API base URL is usually not worth listing:
 
 ```text
 pc|http://192.168.1.83:8080
 admin|http://192.168.1.83:8080/admin
 ```
 
-之后状态栏即显示 `pc: http://192.168.1.83:8080`（可点击）。
+The status line then shows `pc: http://192.168.1.83:8080` (clickable). If the project is a git repository, add `server-url.txt` to `.gitignore` so internal addresses are not committed.
 
-## 目录结构
+## Usage
 
+| Task | Command |
+|------|---------|
+| Install / update | `bash scripts/install.sh` |
+| Verify (includes a sync check against the repo) | `bash scripts/verify.sh` |
+| Show install status (read-only) | `bash scripts/status.sh` |
+| Uninstall | `bash scripts/uninstall.sh` |
+| Preview without changing anything | append `--dry-run` to the commands above |
+| Declare URLs for a project | create `server-url.txt` in the project root |
+
+### `server-url.txt` format
+
+One entry per line. Lines starting with `#` and blank lines are ignored, and a URL must not contain `|`:
+
+```text
+# service entries (updated 2026-08-17)
+pc|http://192.168.1.83:8080
+admin|http://192.168.1.83:8080/admin
+doc|http://192.168.1.83:8081/swagger-ui.html
 ```
-claude-code-status-skills/
-├── SKILL.md                    # skill 入口（Claude 按此执行安装/配置/校验/卸载）
-├── scripts/
-│   ├── lib.sh                  # 公共库：配置/日志/JSON 后端/settings 操作/CLI 解析
-│   ├── install.sh              # 安装：薄封装 + 主流程（部署脚本 + 合并 settings.json + 注册 skill）
-│   ├── uninstall.sh            # 卸载：薄封装 + 主流程（移除配置/脚本/skill 链接）
-│   ├── verify.sh               # 校验：薄封装 + 主流程（脚本语法 + 配置 + 同步 + 输出样例）
-│   ├── status.sh               # 状态：只读总览（脚本/配置/软链接/与仓库同步）
-│   └── statusbar-git-link.sh   # 状态栏脚本本体（OSC8 超链接渲染，自包含）
-└── tests/
-    └── test_statusbar.sh       # 隔离冒烟测试（12 节，临时 CLAUDE_DIR，不碰真实配置）
-```
 
-## 使用方式
+- `name|http://IP:PORT` — named entry (recommended); shown as `name: URL`.
+- `http://IP:PORT` — unnamed; the URL is shown on its own.
 
-| 场景 | 命令 |
-|------|------|
-| 安装 / 更新 | `bash scripts/install.sh` |
-| 校验（含与仓库同步检查） | `bash scripts/verify.sh` |
-| 查看安装状态（只读） | `bash scripts/status.sh` |
-| 卸载 | `bash scripts/uninstall.sh` |
-| 演练（不实际改动） | 上述命令追加 `--dry-run` |
-| 为项目配置 URL | 项目根目录建 `server-url.txt`（或 `/server-url` skill） |
+What belongs in the file:
 
-### 通用 CLI 选项
+| Kind | Examples | Include? |
+|------|----------|----------|
+| Frontend page / admin console | Vite/Webpack/Next dev server, admin backend, nginx entry | Yes |
+| API docs / visual playground | Swagger UI, `/doc.html`, GraphQL Playground | Yes (the docs path, not the bare API root) |
+| Bare backend API base URL | `/api` root of Spring Boot / Express / FastAPI | No by default |
+| Health checks / metrics / WebSocket / gRPC | `/actuator`, `/health`, protocol-only ports | No |
 
-| 选项 | 说明 |
-|------|------|
-| `--help` / `-h` | 显示用法 |
-| `--version` / `-V` | 显示版本号 |
-| `--verbose` / `-v` | 输出 debug 日志 |
-| `--dry-run` | 演练模式，只打印将执行的操作，不实际改动 |
+One project usually needs one to three entries. A quick check: `curl -s -o /dev/null -w '%{content_type}\n' http://IP:PORT/` — `text/html` is usually a page (include it), `application/json` or a failed connection is usually an API (leave it out).
 
-### 环境变量
+### CLI options
 
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `CLAUDE_DIR` | Claude Code 配置根目录（测试隔离常用） | `~/.claude` |
-| `STATUSBAR_URL_FILE` | `server-url.txt` 的文件名 | `server-url.txt` |
-| `STATUSBAR_URL_SEP` | 名称与 URL 的分隔符 | `\|` |
-| `STATUSBAR_ENTRY_SEP` | 多个 URL 条目的间隔符 | ` \| ` |
-| `STATUSBAR_COMMENT` | 注释行前缀 | `#` |
-| `CCS_JSON_BACKEND` | 强制 JSON 后端：`jq` / `python3`（空为自动） | 自动 |
+| Option | Meaning |
+|--------|---------|
+| `--help` / `-h` | Show usage |
+| `--version` / `-V` | Show the version |
+| `--verbose` / `-v` | Debug logging |
+| `--dry-run` | Print what would happen without changing anything |
 
-`STATUSBAR_*` 影响的是状态栏脚本的渲染行为，可直接在 statusline 命令前注入，例如：
+### Environment variables
+
+| Variable | Meaning | Default |
+|----------|---------|---------|
+| `CLAUDE_DIR` | Claude Code config root (handy for isolated tests) | `~/.claude` |
+| `STATUSBAR_URL_FILE` | File name read instead of `server-url.txt` | `server-url.txt` |
+| `STATUSBAR_URL_SEP` | Separator between a name and its URL | `\|` |
+| `STATUSBAR_ENTRY_SEP` | Separator between URL entries | ` \| ` |
+| `STATUSBAR_COMMENT` | Prefix marking a comment line | `#` |
+| `CCS_JSON_BACKEND` | Force the JSON backend: `jq` or `python3` (empty = auto) | auto |
+
+The `STATUSBAR_*` variables control rendering and can be injected in front of the status line command:
+
 ```bash
 STATUSBAR_URL_FILE=urls.txt STATUSBAR_ENTRY_SEP="  " bash ~/.claude/statusbar-git-link.sh
 ```
 
-## 设计说明
+## Layout
 
-- **模块化**：三个管理脚本逻辑全部收敛到 `scripts/lib.sh`，各自仅剩 ~10 行薄封装（source lib + CLI 解析 + 调主流程），消除重复代码。
-- **JSON 双后端**：`settings.json` 的读写优先用 `jq`，缺失时自动回退 `python3`，两者都不可用才报错；可经 `CCS_JSON_BACKEND` 强制指定。
-- **零风险安装**：所有写操作走 `ccs_run`，支持 `--dry-run` 演练；`settings.json` 合并保留其余键，卸载只移除 `statusLine`。
-- **状态可见**：`verify.sh` 与 `status.sh` 都会检查已装脚本与仓库版本是否同步（`cmp` 对比），漂移时提示重跑 install；`status.sh` 为只读总览，不改动任何文件。
-- **状态栏脚本自包含**：运行时被复制到 `~/.claude/`，不依赖仓库，但保持可配置（`STATUSBAR_*` 环境变量均有默认值）。
-- **边界健壮**：`server-url.txt` 支持纯 URL 与 `名称|URL` 两种行、`#` 注释、空行、两侧空白修剪、末行无换行；所有命令对 `set -euo pipefail` 友好（避免 `&&` 简写在 `set -e` 下的陷阱）。
+```
+claude-code-status-skills/
+├── .claude-plugin/
+│   ├── marketplace.json        # marketplace manifest (enables /plugin marketplace add)
+│   └── plugin.json             # plugin manifest
+├── SKILL.md                    # skill entry (Claude follows it to install/configure/verify/uninstall)
+├── scripts/
+│   ├── lib.sh                  # shared library: config, logging, JSON backend, settings, CLI parsing
+│   ├── install.sh              # install: deploy script + merge settings.json + register skill
+│   ├── uninstall.sh            # uninstall: remove config, script, and skill symlink
+│   ├── verify.sh               # verify: syntax, config, sync check, sample output
+│   ├── status.sh               # status: read-only overview (script/config/symlink/sync)
+│   └── statusbar-git-link.sh   # the status line script (OSC 8 hyperlinks, self-contained)
+└── tests/
+    └── test_statusbar.sh       # isolated smoke test (12 sections, temp CLAUDE_DIR, never touches real config)
+```
 
-## 原理
+## Design notes
 
-- `settings.json` 的 `statusLine` 指向 `statusbar-git-link.sh`，脚本用 `CLAUDE_PROJECT_DIR` 定位项目根目录，读取 `server-url.txt` 并以 OSC 8 超链接渲染；当前模型 ID 从 Claude Code 传入 stdin 的会话 JSON（`model.id`）解析。
-- skill 本体通过软链接注册到 `~/.claude/skills/`，仓库更新即生效。
+- **Modular**: the management scripts are thin wrappers (~10 lines each) over `scripts/lib.sh`, so no logic is duplicated.
+- **Two JSON backends**: `settings.json` is read and written with `jq`, falling back to `python3` when `jq` is missing; both missing is an error. `CCS_JSON_BACKEND` forces one.
+- **Safe to install**: every write goes through `ccs_run`, so `--dry-run` previews it. Merging `settings.json` keeps every other key, and uninstall removes only `statusLine`.
+- **Drift is visible**: `verify.sh` and `status.sh` compare the installed script with the repo copy (`cmp`) and tell you to re-run install when they differ. `status.sh` is read-only.
+- **Self-contained status line script**: at runtime it is copied to `~/.claude/` and depends on nothing in the repo, while staying configurable through the `STATUSBAR_*` variables.
+- **Robust input handling**: `server-url.txt` accepts bare URLs and `name|URL` lines, `#` comments, blank lines, surrounding whitespace, and a final line without a newline. Reading the session JSON from stdin is time-bounded, so a status line pipe that is written but never closed cannot hang the refresh. Commands are written to behave under `set -euo pipefail`.
+
+## How it works
+
+- `settings.json`'s `statusLine` points at `statusbar-git-link.sh`. The script locates the project root from `CLAUDE_PROJECT_DIR` (falling back to `workspace.project_dir` in the stdin JSON), reads `server-url.txt`, and renders links as OSC 8 hyperlinks.
+- The current model ID comes from `model.id` in the session JSON Claude Code feeds the command on stdin. Parsing prefers `jq`, then `python3`, then a `sed` fallback.
+- The skill itself is registered as a symlink under `~/.claude/skills/`, so updating the repo updates the skill.
 
 ## License
 
