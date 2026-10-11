@@ -1,6 +1,6 @@
 ---
 name: claude-code-status
-description: 安装、配置、校验、卸载 Claude Code 状态栏(statusline)。状态栏显示 主机名: 项目名(git 仓库链接) | 服务名: http://IP:PORT(局域网可访问 URL, 可点击超链接)，URL 通过项目根目录 server-url.txt 约定声明、支持多入口与名称标签。当用户想安装/配置/查看/卸载 Claude Code 状态栏，或在新机器上部署状态栏，或询问状态栏如何显示项目与服务信息时使用。
+description: 安装、配置、校验、卸载 Claude Code 状态栏(statusline)。状态栏显示 当前模型 ID | 主机名: 项目名(git 仓库链接) | 服务名: http://IP:PORT(局域网可访问 URL, 可点击超链接)，模型 ID 取自 Claude Code 传入的会话 JSON 并置于行首，URL 通过项目根目录 server-url.txt 约定声明、支持多入口与名称标签。当用户想安装/配置/查看/卸载 Claude Code 状态栏，或在新机器上部署状态栏，或询问状态栏如何显示项目与服务信息时使用。
 ---
 
 # Claude Code 状态栏 (statusline)
@@ -9,9 +9,10 @@ description: 安装、配置、校验、卸载 Claude Code 状态栏(statusline)
 
 ## 状态栏展示内容
 
-`<主机名>: <项目名>(git 仓库链接, 可点击) | <服务名>: http://IP:PORT(局域网服务, 可点击)`
+`<模型 ID> | <主机名>: <项目名>(git 仓库链接, 可点击) | <服务名>: http://IP:PORT(局域网服务, 可点击)`
 
 - **git 仓库链接**：自动从项目 `git remote` 解析（SSH/HTTPS 形式均支持）。
+- **模型 ID**：当前会话正在使用的模型，取自 Claude Code 传给 statusline 命令的 stdin JSON 的 `model.id`（如 `claude-opus-5`）；取不到（无 stdin、字段缺失）时该段省略。
 - **局域网服务 URL**：由项目根目录的 `server-url.txt` 声明，每行一个入口；仅 URL 本体为超链接，名称前缀为普通文本。
 
 ## server-url.txt 格式（项目级配置）

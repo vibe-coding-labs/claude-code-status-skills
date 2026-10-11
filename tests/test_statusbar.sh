@@ -2,7 +2,8 @@
 # test_statusbar.sh — 隔离冒烟测试
 # 用临时 CLAUDE_DIR 验证 install/verify/uninstall 全生命周期, 不碰真实 ~/.claude 配置。
 # 覆盖: 双 JSON 后端(jq/python3)、保留已有配置、CLI 选项、--dry-run 无副作用、
-#       server-url.txt 边界情形、statusbar 环境变量定制、git 远程超链接。
+#       server-url.txt 边界情形、statusbar 环境变量定制、git 远程超链接、
+#       stdin 会话 JSON 的模型 ID。
 # 用法: bash tests/test_statusbar.sh
 
 set -euo pipefail
@@ -148,5 +149,33 @@ printf '\n# drift\n' >> "$CLAUDE_DIR/statusbar-git-link.sh"
 if bash "$ROOT/scripts/status.sh" >/dev/null 2>&1; then fail "脚本漂移时 status.sh 应非零"; else pass "脚本漂移时 status.sh 报告过期(非零)"; fi
 if bash "$ROOT/scripts/verify.sh" >/dev/null 2>&1; then fail "脚本漂移时 verify 应失败"; else pass "脚本漂移时 verify 失败(提示重装)"; fi
 
+# ---------- 12/12 模型 ID(stdin 会话 JSON) ----------
+echo "==> 12/12 模型 ID(stdin 会话 JSON 的 model.id)"
+PROJ6="$TMP/proj6"; mkdir -p "$PROJ6"
+printf 'web|http://192.168.1.83:8080\n' > "$PROJ6/server-url.txt"
+JSON6='{"model":{"id":"claude-opus-5","display_name":"Opus"},"workspace":{"project_dir":"'"$PROJ6"'"}}'
+# jq 后端: 模型 ID 位于行首, 其后是项目名与 URL
+out6="$(printf '%s' "$JSON6" | CLAUDE_PROJECT_DIR="$PROJ6" bash "$ROOT/scripts/statusbar-git-link.sh")"
+[[ "$out6" == "claude-opus-5 | "*" | web: "* && "$out6" == *"proj6 | web: "* ]] \
+  && pass "jq 后端渲染 model.id(位于行首)" \
+  || fail "模型 ID 输出不符: $out6"
+# 无 stdin(终端场景): 不出现模型段, 原有输出不变
+out6b="$(CLAUDE_PROJECT_DIR="$PROJ6" bash "$ROOT/scripts/statusbar-git-link.sh" </dev/null)"
+[[ "$out6b" == *"proj6 | web: "* && "$out6b" != *"claude-opus-5"* ]] \
+  && pass "无 stdin 时不显示模型段" \
+  || fail "无 stdin 输出异常: $out6b"
+# python3 后端: 从 PATH 去掉 jq 所在目录
+no_jq_path="$PATH"
+if jq_bin="$(command -v jq)"; then
+  no_jq_path="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$(dirname "$jq_bin")" | paste -sd: -)"
+fi
+out6c="$(printf '%s' "$JSON6" | PATH="$no_jq_path" CLAUDE_PROJECT_DIR="$PROJ6" bash "$ROOT/scripts/statusbar-git-link.sh")"
+[[ "$out6c" == *"claude-opus-5"* ]] && pass "python3 后端渲染 model.id" || fail "python3 后端未取到模型 ID: $out6c"
+# 无 CLAUDE_PROJECT_DIR: 从 JSON 的 workspace.project_dir 回退
+out6d="$(printf '%s' "$JSON6" | env -u CLAUDE_PROJECT_DIR bash "$ROOT/scripts/statusbar-git-link.sh")"
+[[ "$out6d" == "claude-opus-5 | "*": proj6"* ]] \
+  && pass "项目目录从会话 JSON 回退且模型 ID 在行首" \
+  || fail "JSON 回退项目目录失败: $out6d"
+
 echo ""
-echo "✔ 冒烟测试全部通过 (11/11)"
+echo "✔ 冒烟测试全部通过 (12/12)"

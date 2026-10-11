@@ -223,7 +223,7 @@ ccs_install_main() {
 
   printf '\n'
   ccs_log_info "安装完成。新开 Claude Code 会话即可看到状态栏:"
-  echo "   <主机名>: <项目名> | [<服务名>:] <URL>"
+  echo "   <模型 ID> | <主机名>: <项目名> | [<服务名>:] <URL>"
   echo "  为项目声明服务 URL: 项目根目录创建 server-url.txt"
   echo "  格式(每行一个入口, 名称|URL, # 注释/空行忽略):"
   echo "    pc|http://IP:PORT"

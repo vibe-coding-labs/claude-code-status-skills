@@ -1,14 +1,15 @@
 # Claude Code 状态栏 Skill
 
-一个可安装、可配置的 [Claude Code](https://claude.com/claude-code) 状态栏（statusline）封装。状态栏展示 **主机名 / 项目 git 链接 / 局域网服务 URL**，通过一个 skill 完成安装、配置、校验与卸载。
+一个可安装、可配置的 [Claude Code](https://claude.com/claude-code) 状态栏（statusline）封装。状态栏展示 **主机名 / 项目 git 链接 / 当前模型 ID / 局域网服务 URL**，通过一个 skill 完成安装、配置、校验与卸载。
 
 ## 效果
 
 ```
-local-server-002: PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
+claude-opus-5 | local-server-002: PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
 ```
 
 - `PaiMian` → 可点击的 git 仓库链接（自动解析 `git remote`）
+- `claude-opus-5` → 当前会话正在使用的模型 ID（取自 Claude Code 传入的会话 JSON `model.id`，取不到时省略）
 - `backend: http://…` → 可点击的局域网服务 URL（由 `server-url.txt` 声明，仅 URL 本体为超链接，名称前缀为普通文本）
 
 ## 快速开始
@@ -48,7 +49,7 @@ claude-code-status-skills/
 │   ├── status.sh               # 状态：只读总览（脚本/配置/软链接/与仓库同步）
 │   └── statusbar-git-link.sh   # 状态栏脚本本体（OSC8 超链接渲染，自包含）
 └── tests/
-    └── test_statusbar.sh       # 隔离冒烟测试（10 节，临时 CLAUDE_DIR，不碰真实配置）
+    └── test_statusbar.sh       # 隔离冒烟测试（12 节，临时 CLAUDE_DIR，不碰真实配置）
 ```
 
 ## 使用方式
@@ -98,7 +99,7 @@ STATUSBAR_URL_FILE=urls.txt STATUSBAR_ENTRY_SEP="  " bash ~/.claude/statusbar-gi
 
 ## 原理
 
-- `settings.json` 的 `statusLine` 指向 `statusbar-git-link.sh`，脚本用 `CLAUDE_PROJECT_DIR` 定位项目根目录，读取 `server-url.txt` 并以 OSC 8 超链接渲染。
+- `settings.json` 的 `statusLine` 指向 `statusbar-git-link.sh`，脚本用 `CLAUDE_PROJECT_DIR` 定位项目根目录，读取 `server-url.txt` 并以 OSC 8 超链接渲染；当前模型 ID 从 Claude Code 传入 stdin 的会话 JSON（`model.id`）解析。
 - skill 本体通过软链接注册到 `~/.claude/skills/`，仓库更新即生效。
 
 ## License
