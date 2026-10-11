@@ -4,10 +4,12 @@
 
 An installable, configurable [Claude Code](https://claude.com/claude-code) status line, packaged as a skill. It shows the **current model ID**, the **hostname**, a **clickable git repository link**, and **clickable LAN service URLs**, and one skill handles install, configuration, verification, and uninstall.
 
+Website: <https://vibe-coding-labs.github.io/claude-code-status-skills/>
+
 ## What it looks like
 
 ```
-claude-opus-5 | local-server-002: PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
+claude-opus-5 | local-server-002 | PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
 ```
 
 - `claude-opus-5` — the model ID the current session is using, read from `model.id` in the session JSON Claude Code passes to the status line command. The segment is omitted when it cannot be determined.
@@ -122,6 +124,8 @@ STATUSBAR_URL_FILE=urls.txt STATUSBAR_ENTRY_SEP="  " bash ~/.claude/statusbar-gi
 
 ```
 claude-code-status-skills/
+├── .github/workflows/pages.yml # 构建 website/ 并部署到 GitHub Pages
+├── website/                    # 官网（TypeScript + React，中英切换）
 ├── .claude-plugin/
 │   ├── marketplace.json        # marketplace manifest (enables /plugin marketplace add)
 │   └── plugin.json             # plugin manifest

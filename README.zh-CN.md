@@ -4,10 +4,12 @@
 
 一个可安装、可配置的 [Claude Code](https://claude.com/claude-code) 状态栏（statusline），封装为一个 skill。状态栏展示**当前模型 ID**、**主机名**、**可点击的 git 仓库链接**和**可点击的局域网服务 URL**，安装、配置、校验与卸载都由这一个 skill 完成。
 
+官网：<https://vibe-coding-labs.github.io/claude-code-status-skills/>
+
 ## 效果
 
 ```
-claude-opus-5 | local-server-002: PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
+claude-opus-5 | local-server-002 | PaiMian | backend: http://192.168.1.83:30816 | pc: http://192.168.1.83:8080
 ```
 
 - `claude-opus-5` — 当前会话正在使用的模型 ID，取自 Claude Code 传给 statusline 命令的会话 JSON 的 `model.id`；取不到时该段省略。
@@ -122,6 +124,8 @@ STATUSBAR_URL_FILE=urls.txt STATUSBAR_ENTRY_SEP="  " bash ~/.claude/statusbar-gi
 
 ```
 claude-code-status-skills/
+├── .github/workflows/pages.yml # 构建 website/ 并部署到 GitHub Pages
+├── website/                    # 官网（TypeScript + React，中英切换）
 ├── .claude-plugin/
 │   ├── marketplace.json        # marketplace 清单（支持 /plugin marketplace add）
 │   └── plugin.json             # 插件清单

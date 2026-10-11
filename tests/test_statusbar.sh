@@ -115,7 +115,7 @@ fi
 echo "==> 9/10 无 server-url.txt 时输出正常"
 PROJ5="$TMP/proj5"; mkdir -p "$PROJ5"
 out5="$(CLAUDE_PROJECT_DIR="$PROJ5" bash "$ROOT/scripts/statusbar-git-link.sh")"
-[[ "$out5" == *"proj5"* && "$out5" != *" | "* ]] && pass "无 URL 文件时仅显示主机名+项目名" || fail "无 URL 文件输出异常: $out5"
+[[ "$out5" == *" | proj5" && "$out5" != *"://"* ]] && pass "无 URL 文件时仅显示主机名+项目名" || fail "无 URL 文件输出异常: $out5"
 
 # ---------- 10/10 CLI 选项与 --dry-run 无副作用 ----------
 echo "==> 10/10 CLI 选项与 --dry-run 无副作用"
@@ -173,7 +173,7 @@ out6c="$(printf '%s' "$JSON6" | PATH="$no_jq_path" CLAUDE_PROJECT_DIR="$PROJ6" b
 [[ "$out6c" == *"claude-opus-5"* ]] && pass "python3 后端渲染 model.id" || fail "python3 后端未取到模型 ID: $out6c"
 # 无 CLAUDE_PROJECT_DIR: 从 JSON 的 workspace.project_dir 回退
 out6d="$(printf '%s' "$JSON6" | env -u CLAUDE_PROJECT_DIR bash "$ROOT/scripts/statusbar-git-link.sh")"
-[[ "$out6d" == "claude-opus-5 | "*": proj6"* ]] \
+[[ "$out6d" == "claude-opus-5 | "*" | proj6"* ]] \
   && pass "项目目录从会话 JSON 回退且模型 ID 在行首" \
   || fail "JSON 回退项目目录失败: $out6d"
 

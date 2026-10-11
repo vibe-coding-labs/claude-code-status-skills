@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # statusbar-git-link.sh — Claude Code statusline 渲染脚本
-# 输出: <模型 ID> | <主机名>: <项目名> (git 远程为超链接) | [<服务名>:] <URL> ...
+# 输出: <模型 ID> | <主机名> | <项目名> (git 远程为超链接) | [<服务名>:] <URL> ...
 # 依赖: CLAUDE_PROJECT_DIR(Claude Code 注入), bash(OSC8 超链接), git(可选)
 # 模型 ID 取自 stdin 会话 JSON 的 model.id(jq 优先, 缺失回退 python3, 都没有则 sed)。
 # 自包含: 运行时被复制到 $CLAUDE_DIR, 不 source 外部库。
@@ -132,18 +132,18 @@ sb_server_urls() {
 
 # ---------- 主流程 ----------
 sb_read_session_json
-project_dir="$(sb_project_dir)" || { echo "$(hostname -s): ${project_dir:-}"; exit 0; }
+project_dir="$(sb_project_dir)" || { echo "$(hostname -s) | ${project_dir:-}"; exit 0; }
 base="$(basename "$project_dir")"
 host="$(hostname -s)"
 repourl="$(sb_git_repourl "$project_dir")"
 model="$(sb_model_id)"
 extra="$(sb_server_urls "$project_dir")"
 
-# 主体: 主机名 + 项目名(有 git 远程时项目名为超链接)
+# 主体: 主机名 | 项目名(有 git 远程时项目名为超链接)
 if [ -n "$repourl" ]; then
-  body="$(printf '%s: \e]8;;%s\a%s\e]8;;\a' "$host" "$repourl" "$base")"
+  body="$(printf '%s | \e]8;;%s\a%s\e]8;;\a' "$host" "$repourl" "$base")"
 else
-  body="${host}: ${base}"
+  body="${host} | ${base}"
 fi
 
 # 模型 ID 在最前, URL 条目在最后, 各段用 " | " 连接
